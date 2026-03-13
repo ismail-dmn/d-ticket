@@ -84,10 +84,9 @@ function vitePluginManusDebugCollector(): Plugin {
         });
       });
     },
-  } as Plugin; // TS2353 hatasını çözmek için 'as Plugin' ekledik
+  } as Plugin;
 }
 
-// Plugin dizisini açıkça 'Plugin[]' olarak tanımlıyoruz
 const plugins: Plugin[] = [
   react(),
   tailwindcss() as unknown as Plugin,
@@ -106,5 +105,15 @@ export default defineConfig({
     },
   },
   envDir: PROJECT_ROOT,
-  root: path
-}
+  root: path.resolve(PROJECT_ROOT, "client"),
+  publicDir: path.resolve(PROJECT_ROOT, "public"),
+  build: {
+    outDir: path.resolve(PROJECT_ROOT, "dist"), 
+    emptyOutDir: true,
+  },
+  server: {
+    host: true,
+    allowedHosts: ["localhost", "127.0.0.1", ".manuscomputer.ai", ".manus.computer"],
+    fs: { strict: true, deny: ["**/.*"] },
+  },
+});
