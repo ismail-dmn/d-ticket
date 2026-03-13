@@ -14,6 +14,7 @@ import NewProposalPage from "./pages/NewProposalPage";
 import CompanyVaultPage from "./pages/CompanyVaultPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import ProposalDetailPage from "./pages/ProposalDetailPage";
+import CustomerDetailPage from "./pages/CustomerDetailPage";
 import ReportsPage from "./pages/ReportsPage";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path={"/vault"} component={CompanyVaultPage} />
       <Route path={"/tickets/:id"} component={TicketDetailPage} />
       <Route path={"/proposals/:id"} component={ProposalDetailPage} />
+      <Route path={"/customers/:id"} component={CustomerDetailPage} />
       <Route path={"/reports"} component={ReportsPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
