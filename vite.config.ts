@@ -107,3 +107,4 @@ export default defineConfig({
   },
   envDir: PROJECT_ROOT,
   root: path
+}
