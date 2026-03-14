@@ -6,3 +6,14 @@ export const ENV = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
 };
+
+// Validate required environment variables
+if (!ENV.cookieSecret && ENV.isProduction) {
+  console.warn("[ENV] JWT_SECRET is not configured in production");
+}
+if (!ENV.googleClientId) {
+  console.warn("[ENV] GOOGLE_CLIENT_ID is not configured");
+}
+if (!ENV.googleClientSecret && ENV.isProduction) {
+  console.warn("[ENV] GOOGLE_CLIENT_SECRET is not configured in production");
+}

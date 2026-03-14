@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 const PROJECT_ROOT = import.meta.dirname;
 const LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
@@ -91,7 +90,6 @@ const plugins: Plugin[] = [
   react(),
   tailwindcss() as unknown as Plugin,
   jsxLocPlugin() as Plugin,
-  vitePluginManusRuntime() as Plugin,
   vitePluginManusDebugCollector()
 ];
 
