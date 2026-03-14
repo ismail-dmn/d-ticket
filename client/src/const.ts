@@ -1,7 +1,7 @@
 export const getLoginUrl = ( ) => {
   // Varsayılan adresi https://manus.im olarak güncelleyin
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL || "https://manus.im";
-  const appId = import.meta.env.VITE_APP_ID || "";
+  const appId = import.meta.env.VITE_APP_ID || "sk-pI6B0UX-I32SDxbtfYIuXoGfMpW2asPXUiIC9eCqn_GscfPavQO1ynBppWVwPsLSriqV43-GBGnDcad0tCTe5XUN5PU1";
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri );
   
