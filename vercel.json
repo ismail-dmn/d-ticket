@@ -1,14 +1,6 @@
 {
   "buildCommand": "pnpm install && pnpm build",
   "outputDirectory": "dist",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
-    "GOOGLE_CLIENT_ID": "@google_client_id",
-    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
-    "VITE_GOOGLE_CLIENT_ID": "@vite_google_client_id",
-    "NODE_ENV": "production"
-  },
   "functions": {
     "api/index.js": {
       "runtime": "nodejs20.x",

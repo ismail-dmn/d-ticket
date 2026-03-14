@@ -45,11 +45,11 @@
 - Tüm gerekli Google OAuth değişkenleri listelendi
 
 ### 7. ✅ Vercel Konfigürasyonu Güncellendi (Resolved)
-**Sorun**: `vercel.json` - `NODE_ENV` environment variable'ı eksik
+**Sorun**: `vercel.json` - Environment variable referansları hata veriyor
 **Çözüm**:
-- `vercel.json` güncellendi
-- `NODE_ENV: "production"` eklendi
-- Build ve runtime konfigürasyonu optimize edildi
+- `vercel.json` dosyasından `@database_url`, `@jwt_secret` vb. referansları kaldırıldı
+- Vercel dashboard'dan doğrudan environment variables eklenecek şekilde ayarlandı
+- `VERCEL_ENVIRONMENT_SETUP.md` dokümantasyonu eklendi
 
 ### 8. ✅ server/_core/env.ts Validasyonu Eklendi (Resolved)
 **Sorun**: Ortam değişkenleri kontrol edilmiyor
