@@ -11,51 +11,44 @@ export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [, navigate] = useLocation();
 
-  // Google Giriş Yanıtını İşleme
   const handleGoogleResponse = (response: any) => {
-    console.log("Google JWT ID Token:", response.credential);
-    /**
-     * TODO: Burada backend tarafındaki tRPC mutasyonunu çağıracağız.
-     * Örn: loginWithGoogle.mutate({ token: response.credential });
-     */
+    console.log("Google Token Alındı:", response.credential);
+    // Backend mutasyonu buraya bağlanacak
   };
 
   useEffect(() => {
-    // Sadece kullanıcı giriş yapmamışsa ve yükleme bitmişse Google butonunu hazırla
+    // Sadece giriş yapılmamışsa ve sayfa hazırsa Google'ı başlat
     if (!isAuthenticated && !loading) {
-      /* global google */
-      const initializeGoogle = () => {
+      const initGoogle = () => {
         // @ts-ignore
-        if (typeof google !== 'undefined') {
+        if (window.google && window.google.accounts) {
           // @ts-ignore
-          google.accounts.id.initialize({
+          window.google.accounts.id.initialize({
             client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
             callback: handleGoogleResponse,
             auto_select: false,
-            cancel_on_tap_outside: true,
           });
 
-          // @ts-ignore
-          google.accounts.id.renderButton(
-            document.getElementById("googleSignInDiv"),
-            { 
-              theme: "outline", 
-              size: "large", 
-              width: "350", // Kart genişliğine uygun
+          const parent = document.getElementById("googleSignInDiv");
+          if (parent) {
+            // @ts-ignore
+            window.google.accounts.id.renderButton(parent, {
+              theme: "outline",
+              size: "large",
+              width: 350,
               text: "signin_with",
-              shape: "rectangular" 
-            }
-          );
+              shape: "rectangular",
+            });
+          }
         }
       };
 
-      // Script'in yüklendiğinden emin olmak için küçük bir gecikme veya kontrol
-      const timer = setTimeout(initializeGoogle, 100);
-      return () => clearTimeout(timer);
+      // Scriptin yüklendiğinden emin olmak için kısa bir bekleme
+      const timeout = setTimeout(initGoogle, 300);
+      return () => clearTimeout(timeout);
     }
   }, [isAuthenticated, loading]);
 
-  // Verileri çek
   const customersQuery = trpc.customers.list.useQuery(undefined, { enabled: isAuthenticated });
   const ticketsQuery = trpc.tickets.list.useQuery(undefined, { enabled: isAuthenticated });
   const overdueQuery = trpc.customers.getOverdue.useQuery(undefined, { enabled: isAuthenticated });
@@ -63,34 +56,29 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Yükleniyor...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-foreground font-medium">Sistem Hazırlanıyor...</p>
         </div>
       </div>
     );
   }
 
-  // GİRİŞ YAPILMAMIŞ EKRANI (Güncellendi)
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary to-primary-dark p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary-dark/40 p-4">
+        <Card className="w-full max-w-md shadow-2xl border-primary/10">
           <CardHeader className="text-center">
-            <div className="text-4xl font-bold text-primary mb-2">D Bilişim</div>
+            <div className="text-4xl font-bold text-primary mb-2 tracking-tight">D Bilişim</div>
             <CardTitle>IT Operasyon Sistemi</CardTitle>
-            <CardDescription>Müşteri ve Ticket Yönetimi</CardDescription>
+            <CardDescription>Kurumsal hesabınızla devam edin</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-6 pb-8">
-            <p className="text-sm text-muted-foreground text-center">
-              Sisteme erişmek için Google hesabınızla veya kurumsal bilgilerinizle giriş yapın.
-            </p>
-            
-            {/* Google Buton Konteynırı */}
-            <div id="googleSignInDiv" className="min-h-[50px] flex items-center justify-center"></div>
+            {/* Google Render Alanı */}
+            <div id="googleSignInDiv" className="min-h-[44px]"></div>
 
             <div className="relative w-full">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-muted" /></div>
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
               <div className="relative flex justify-center text-xs uppercase text-muted-foreground">
                 <span className="bg-card px-2">Veya</span>
               </div>
@@ -98,8 +86,8 @@ export default function Home() {
 
             <Button
               onClick={() => (window.location.href = getLoginUrl())}
-              variant="secondary"
-              className="w-full hover:bg-secondary-dark"
+              variant="outline"
+              className="w-full hover:bg-primary/5"
               size="lg"
             >
               Klasik Giriş Yap
@@ -110,7 +98,6 @@ export default function Home() {
     );
   }
 
-  // Ödeme gecikmiş müşteriler ve özet veriler
   const overdueCustomers = overdueQuery.data || [];
   const totalCustomers = customersQuery.data?.length || 0;
   const totalTickets = ticketsQuery.data?.length || 0;
@@ -118,151 +105,102 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-white shadow-md">
-        <div className="container py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">D Bilişim Çözümleri</h1>
-              <p className="text-primary-foreground/80">IT Operasyon ve Finans Sistemi</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">
-                {user?.name || "Kullanıcı"}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                }}
-                className="text-white border-white hover:bg-white hover:text-primary transition-colors"
-              >
-                Çıkış Yap
-              </Button>
-            </div>
+      <header className="bg-primary text-white shadow-lg sticky top-0 z-50">
+        <div className="container py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">D Bilişim Çözümleri</h1>
+            <p className="text-xs text-primary-foreground/70">IT & Finans Yönetimi</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium hidden sm:inline-block bg-white/10 px-3 py-1 rounded-full">
+              {user?.name}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => { logout(); navigate("/"); }}
+              className="font-bold"
+            >
+              Çıkış
+            </Button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Ana İçerik */}
-      <div className="container py-8">
-        {/* Ödeme Gecikmiş Uyarısı */}
+      <main className="container py-8">
         {overdueCustomers.length > 0 && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950 border-l-4 border-destructive rounded-r-lg shadow-sm">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-destructive">Ödeme Gecikmiş Müşteriler</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {overdueCustomers.length} müşterinin ödemesi gecikmiştir. Lütfen finans panelinden kontrol edin.
-                </p>
-              </div>
+          <div className="mb-8 p-4 bg-destructive/10 border-l-4 border-destructive rounded-r-lg flex items-center gap-4">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <div>
+              <h3 className="font-bold text-destructive">Ödeme Gecikmesi Mevcut</h3>
+              <p className="text-sm opacity-90">{overdueCustomers.length} müşteri için aksiyon bekleniyor.</p>
             </div>
           </div>
         )}
 
-        {/* Özet Kartları */}
-        <div className="dashboard-grid mb-8">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase tracking-wider">Toplam Müşteri</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">Aktif portföy</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase tracking-wider">Toplam Ticket</CardTitle>
-              <Ticket className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{totalTickets}</div>
-              <p className="text-xs text-muted-foreground">{openTickets} adet bekleyen talep</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow border-t-4 border-t-destructive">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase tracking-wider text-destructive">Risk Durumu</CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-destructive">{overdueCustomers.length}</div>
-              <p className="text-xs text-muted-foreground">Ödeme bekleyen firma</p>
-            </CardContent>
-          </Card>
+        <div className="dashboard-grid mb-10">
+          <StatCard title="Toplam Müşteri" value={totalCustomers} icon={<Users className="h-5 w-5" />} desc="Kayıtlı Firmalar" />
+          <StatCard title="Aktif Ticket" value={totalTickets} icon={<Ticket className="h-5 w-5" />} desc={`${openTickets} Açık Durumda`} />
+          <StatCard title="Riskli Bakiyeler" value={overdueCustomers.length} icon={<TrendingDown className="h-5 w-5" />} desc="Ödeme Bekleyenler" isAlert />
         </div>
 
-        {/* Hızlı İşlemler Bölümü */}
-        <div className="mb-10">
-          <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
-             <Plus className="h-5 w-5" /> Hızlı İşlemler
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button
-              onClick={() => navigate("/customers/new")}
-              className="h-auto py-8 flex flex-col items-center gap-3 bg-primary hover:bg-primary-dark shadow-lg transition-transform hover:-translate-y-1"
-            >
-              <Plus className="h-8 w-8" />
-              <span className="font-semibold">Yeni Müşteri</span>
-            </Button>
-            <Button
-              onClick={() => navigate("/tickets/new")}
-              className="h-auto py-8 flex flex-col items-center gap-3 bg-primary hover:bg-primary-dark shadow-lg transition-transform hover:-translate-y-1"
-            >
-              <Ticket className="h-8 w-8" />
-              <span className="font-semibold">Yeni Ticket</span>
-            </Button>
-            <Button
-              onClick={() => navigate("/proposals/new")}
-              className="h-auto py-8 flex flex-col items-center gap-3 bg-primary hover:bg-primary-dark shadow-lg transition-transform hover:-translate-y-1"
-            >
-              <FileText className="h-8 w-8" />
-              <span className="font-semibold">Teklif Oluştur</span>
-            </Button>
-            <Button
-              onClick={() => navigate("/customers")}
-              className="h-auto py-8 flex flex-col items-center gap-3 bg-secondary hover:bg-secondary-dark shadow-lg transition-transform hover:-translate-y-1"
-            >
-              <Users className="h-8 w-8" />
-              <span className="font-semibold">Müşteri Listesi</span>
-            </Button>
+        <section className="mb-12">
+          <h2 className="text-xl font-bold text-primary mb-6">Hızlı İşlemler</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickActionButton onClick={() => navigate("/customers/new")} icon={<Plus />} label="Yeni Müşteri" color="bg-primary" />
+            <QuickActionButton onClick={() => navigate("/tickets/new")} icon={<Ticket />} label="Yeni Ticket" color="bg-primary" />
+            <QuickActionButton onClick={() => navigate("/proposals/new")} icon={<FileText />} label="Teklif Yaz" color="bg-primary" />
+            <QuickActionButton onClick={() => navigate("/customers")} icon={<Users />} label="Müşteri Portföyü" color="bg-secondary" />
           </div>
-        </div>
+        </section>
 
-        {/* Alt Liste: Gecikmiş Ödemeler */}
         {overdueCustomers.length > 0 && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-xl font-bold text-destructive mb-4">Ödeme Hatırlatması Gerekenler</h2>
+          <section className="animate-in fade-in duration-700">
+            <h2 className="text-xl font-bold text-destructive mb-4">Gecikmiş Ödemeler Listesi</h2>
             <div className="grid gap-3">
               {overdueCustomers.map((customer) => (
-                <div key={customer.id} className="card-overdue p-4 rounded-xl flex items-center justify-between group hover:scale-[1.01] transition-all">
+                <div key={customer.id} className="card-overdue p-4 rounded-xl flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-foreground text-lg">{customer.firmAdi}</h3>
-                    <div className="flex gap-4 mt-1">
-                      <span className="text-sm font-medium text-destructive">
-                        Bakiye: {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(parseFloat(customer.kalanBorc as any) || 0)}
-                      </span>
-                    </div>
+                    <h3 className="font-bold text-foreground">{customer.firmAdi}</h3>
+                    <p className="text-sm font-semibold text-destructive">
+                      Bakiye: {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(customer.kalanBorc))}
+                    </p>
                   </div>
-                  <Button
-                    onClick={() => navigate(`/customers/${customer.id}`)}
-                    variant="ghost"
-                    className="bg-white/50 hover:bg-white text-destructive font-bold"
-                  >
-                    Müşteri Kartını Aç
-                  </Button>
+                  <Button onClick={() => navigate(`/customers/${customer.id}`)} variant="outline" size="sm">İncele</Button>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
+  );
+}
+
+// Yardımcı Alt Bileşenler
+function StatCard({ title, value, icon, desc, isAlert = false }: any) {
+  return (
+    <Card className={`transition-all hover:shadow-md ${isAlert ? 'border-destructive/50' : ''}`}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xs font-bold uppercase text-muted-foreground">{title}</CardTitle>
+        <div className={isAlert ? 'text-destructive' : 'text-primary'}>{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-3xl font-bold ${isAlert ? 'text-destructive' : 'text-primary'}`}>{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickActionButton({ onClick, icon, label, color }: any) {
+  return (
+    <Button
+      onClick={onClick}
+      className={`h-auto py-6 flex flex-col gap-2 shadow-md hover:scale-[1.02] transition-transform ${color}`}
+    >
+      <div className="p-2 bg-white/20 rounded-lg">{icon}</div>
+      <span className="font-semibold text-xs sm:text-sm">{label}</span>
+    </Button>
   );
 }
