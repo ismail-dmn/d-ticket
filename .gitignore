@@ -6,6 +6,7 @@
 dist/
 build/
 *.dist
+VITE_GOOGLE_CLIENT_ID=buraya_google_cloud_console_id_gelecek.apps.googleusercontent.com
 
 # Environment variables
 .env
