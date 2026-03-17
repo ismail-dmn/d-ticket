@@ -7,4 +7,6 @@ export const ENV = {
     : "http://localhost:3000"),
   nodeEnv: process.env.NODE_ENV || "development",
   jwtSecret: process.env.JWT_SECRET || "dev-secret-change-in-production",
+  cookieSecret: process.env.COOKIE_SECRET || "cookie-secret-change-in-production",
+  appId: process.env.APP_ID || "d-ticket",
 };
