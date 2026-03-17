@@ -1,9 +1,10 @@
-# Vercel Dashboard > Project > Settings > Environment Variables
-# Tüm bu değişkenleri tek tek ekle
-
-GOOGLE_CLIENT_ID=34475535014-thtsk9vcdpjak6n5cmtf6a957ea7l33i.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-DATABASE_URL=mysql://user:password@host:3306/dbname
-
-NODE_ENV=production
+export const ENV = {
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+  databaseUrl: process.env.DATABASE_URL || "",
+  appUrl: process.env.APP_URL || process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : "http://localhost:3000",
+  nodeEnv: process.env.NODE_ENV || "development",
+  jwtSecret: process.env.JWT_SECRET || "dev-secret-change-in-production",
+};
