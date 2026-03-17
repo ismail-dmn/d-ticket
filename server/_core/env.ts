@@ -1,19 +1,9 @@
-export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "google-auth",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  isProduction: process.env.NODE_ENV === "production",
-  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-};
+# Vercel Dashboard > Project > Settings > Environment Variables
+# Tüm bu değişkenleri tek tek ekle
 
-// Validate required environment variables
-if (!ENV.cookieSecret && ENV.isProduction) {
-  console.warn("[ENV] JWT_SECRET is not configured in production");
-}
-if (!ENV.googleClientId) {
-  console.warn("[ENV] GOOGLE_CLIENT_ID is not configured");
-}
-if (!ENV.googleClientSecret && ENV.isProduction) {
-  console.warn("[ENV] GOOGLE_CLIENT_SECRET is not configured in production");
-}
+GOOGLE_CLIENT_ID=34475535014-thtsk9vcdpjak6n5cmtf6a957ea7l33i.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+DATABASE_URL=mysql://user:password@host:3306/dbname
+
+NODE_ENV=production

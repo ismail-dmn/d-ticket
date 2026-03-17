@@ -3,15 +3,74 @@ import express, { type Express, type Request, type Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
-import { verifyGoogleToken } from "./googleAuth";
+import {
+  verifyGoogleToken,
+  exchangeCodeForToken,
+  getGoogleAuthUrl,
+} from "./googleAuth";
 
 export function registerOAuthRoutes(app: Express) {
-  // Google OAuth endpoint - handles ID token from frontend
+  // ─── 1. Google OAuth başlat - frontend bu endpoint'e yönlendirir ──────────
+  app.get("/api/oauth/google/login", (req: Request, res: Response) => {
+    try {
+      const authUrl = getGoogleAuthUrl(req);
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error("[Google OAuth] Failed to generate auth URL", error);
+      res.status(500).json({ error: "Failed to initiate Google OAuth" });
+    }
+  });
+
+  // ─── 2. Google'dan dönen callback ─────────────────────────────────────────
+  app.get("/api/oauth/google/callback", async (req: Request, res: Response) => {
+    const { code, error: oauthError } = req.query;
+
+    if (oauthError) {
+      console.error("[Google OAuth] OAuth error:", oauthError);
+      return res.redirect("/?error=oauth_denied");
+    }
+
+    if (!code || typeof code !== "string") {
+      return res.redirect("/?error=missing_code");
+    }
+
+    try {
+      const idToken = await exchangeCodeForToken(code, req);
+      const userInfo = await verifyGoogleToken(idToken);
+
+      await db.upsertUser({
+        openId: userInfo.openId,
+        name: userInfo.name || null,
+        email: userInfo.email ?? null,
+        loginMethod: userInfo.platform,
+        lastSignedIn: new Date(),
+      });
+
+      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
+
+      // Başarılı giriş sonrası dashboard'a yönlendir
+      res.redirect("/dashboard");
+    } catch (error) {
+      console.error("[Google OAuth] Callback failed", error);
+      res.redirect("/?error=auth_failed");
+    }
+  });
+
+  // ─── 3. Frontend ID token ile direkt giriş (popup flow için) ─────────────
   app.post("/api/oauth/google", async (req: Request, res: Response) => {
     const { token } = req.body;
 
     if (!token) {
-      (res as any).status(400).json({ error: "token is required" });
+      res.status(400).json({ error: "token is required" });
       return;
     }
 
@@ -32,12 +91,12 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      (res as any).cookie(COOKIE_NAME, sessionToken, {
+      res.cookie(COOKIE_NAME, sessionToken, {
         ...cookieOptions,
         maxAge: ONE_YEAR_MS,
       });
 
-      (res as any).json({
+      res.json({
         success: true,
         user: {
           openId: userInfo.openId,
@@ -47,7 +106,13 @@ export function registerOAuthRoutes(app: Express) {
       });
     } catch (error) {
       console.error("[Google OAuth] Authentication failed", error);
-      (res as any).status(500).json({ error: "Google OAuth authentication failed" });
+      res.status(500).json({ error: "Google OAuth authentication failed" });
     }
+  });
+
+  // ─── 4. Logout ────────────────────────────────────────────────────────────
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    res.clearCookie(COOKIE_NAME);
+    res.json({ success: true });
   });
 }
