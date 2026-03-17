@@ -1,11 +1,17 @@
+import { type Request, type Response } from "express";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
-// express yerine doğrudan tip importlarını kontrol edin
-import express from "express"; 
-import type { Express, Request, Response } from "express";
-// ... diğer importlar
+import * as db from "../db"; // db'nin doğru yerini kontrol edin
+import { sdk } from "./sdk";
+import { getSessionCookieOptions } from "./cookies";
+import { 
+  getGoogleAuthUrl, 
+  exchangeCodeForToken, 
+  verifyGoogleToken 
+} from "./googleAuth"; // Bu fonksiyonları tek tek import edin
 
-// Fonksiyon imzasını şu şekilde güncellemeyi deneyin:
-export function registerOAuthRoutes(app: any) { // Geçici olarak 'any' vererek build alıp almadığını kontrol edin
+export function registerOAuthRoutes(app: any) { // 'any' kullanarak Express tip uyuşmazlığını build için aşın
+   // ... fonksiyon içeriği aynı kalabilir
+}
   // ─── 1. Google OAuth başlat - frontend bu endpoint'e yönlendirir ──────────
   app.get("/api/oauth/google/login", (req: Request, res: Response) => {
     try {
