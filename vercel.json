@@ -1,5 +1,4 @@
 {
-{
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
@@ -13,10 +12,3 @@
     }
   ]
 }
-```
-
-**GitHub → `api/index.ts` → Delete this file** (tamamen sil)
-
-Build script zaten şunu üretiyor:
-```
-dist/api/index.js  ← server/_core/index.ts'den bundle edilmiş
