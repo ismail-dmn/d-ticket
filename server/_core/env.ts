@@ -1,5 +1,5 @@
 export const ENV = {
-  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientId: process.env.VITE_GOOGLE_CLIENT_ID || "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
   databaseUrl: process.env.DATABASE_URL || "",
   appUrl: process.env.APP_URL || (process.env.VERCEL_URL
