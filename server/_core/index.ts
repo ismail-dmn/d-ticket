@@ -10,8 +10,10 @@ const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+// OAuth routes
 registerOAuthRoutes(app);
 
+// tRPC API
 app.use(
   "/api/trpc",
   createExpressMiddleware({
@@ -20,5 +22,10 @@ app.use(
   })
 );
 
-// Vercel serverless handler
+// Health check
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Vercel serverless handler - default export zorunlu
 export default app;
