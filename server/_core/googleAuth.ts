@@ -1,33 +1,31 @@
 import { OAuth2Client } from "google-auth-library";
-import { ENV } from "./env";
 
-// Her request için yeni client oluşturmak yerine cache'le
-// ama redirect URI dinamik olduğu için factory fonksiyon kullan
+// ENV dosyasından veya doğrudan process.env'den güvenli okuma yapalım
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
 function createGoogleClient(redirectUri: string): OAuth2Client {
-  if (!ENV.googleClientId || !ENV.googleClientSecret) {
-    throw new Error(
-      "Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables."
-    );
+  // KRİTİK: Eğer ID veya Secret yoksa sessizce hata vermek yerine terminale bas
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    console.error("❌ ERROR: Google OAuth Credentials are NOT SET in Environment Variables!");
+    throw new Error("Google OAuth credentials not configured.");
   }
 
   return new OAuth2Client(
-    ENV.googleClientId,
-    ENV.googleClientSecret,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
     redirectUri
   );
 }
 
-// Token doğrulama için singleton (redirect URI gerekmez)
 let verifyClient: OAuth2Client | null = null;
 
 function getVerifyClient(): OAuth2Client {
   if (!verifyClient) {
-    if (!ENV.googleClientId || !ENV.googleClientSecret) {
-      throw new Error(
-        "Google OAuth credentials not configured."
-      );
+    if (!GOOGLE_CLIENT_ID) {
+      throw new Error("Google OAuth client ID not configured.");
     }
-    verifyClient = new OAuth2Client(ENV.googleClientId);
+    verifyClient = new OAuth2Client(GOOGLE_CLIENT_ID);
   }
   return verifyClient;
 }
@@ -40,15 +38,12 @@ export interface GoogleUserInfo {
   platform: "google";
 }
 
-/**
- * Verify Google ID Token and extract user information
- */
 export async function verifyGoogleToken(token: string): Promise<GoogleUserInfo> {
   try {
     const client = getVerifyClient();
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: ENV.googleClientId,
+      audience: GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -70,21 +65,16 @@ export async function verifyGoogleToken(token: string): Promise<GoogleUserInfo> 
   }
 }
 
-/**
- * Get base URL - Vercel, production ve local ortamları destekler
- */
 function getBaseUrl(req?: any): string {
-  // Vercel otomatik VERCEL_URL sağlar
+  // Vercel'de protokol her zaman https olmalıdır
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  // Manuel olarak tanımlanmış production URL (önerilen)
   if (process.env.APP_URL) {
     return process.env.APP_URL;
   }
 
-  // Request'ten URL çıkar (fallback)
   if (req) {
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const host = req.headers["x-forwarded-host"] || req.headers.host;
@@ -94,9 +84,6 @@ function getBaseUrl(req?: any): string {
   return "http://localhost:3000";
 }
 
-/**
- * Get Google OAuth authorization URL
- */
 export function getGoogleAuthUrl(req?: any): string {
   const baseUrl = getBaseUrl(req);
   const redirectUri = `${baseUrl}/api/oauth/google/callback`;
@@ -107,17 +94,18 @@ export function getGoogleAuthUrl(req?: any): string {
     "https://www.googleapis.com/auth/userinfo.profile",
   ];
 
-  return client.generateAuthUrl({
+  // Parametreleri açıkça kontrol ederek gönderiyoruz
+  const url = client.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
     redirect_uri: redirectUri,
     prompt: "consent",
   });
+
+  console.log("🔗 Generated Auth URL:", url); // Debug için URL'yi logla (client_id içeriyor mu bak)
+  return url;
 }
 
-/**
- * Exchange authorization code for tokens
- */
 export async function exchangeCodeForToken(code: string, req?: any): Promise<string> {
   try {
     const baseUrl = getBaseUrl(req);
