@@ -1,73 +1,27 @@
 import { type Request, type Response } from "express";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
-import * as db from "../db";
 import { sdk } from "./sdk";
 import { getSessionCookieOptions } from "./cookies";
-import { getGoogleAuthUrl, exchangeCodeForToken, verifyGoogleToken } from "./googleAuth";
+
+const LOCAL_USER = {
+  openId: "local_admin",
+  name: "Admin",
+  email: "admin@local.dev",
+};
 
 export function registerOAuthRoutes(app: any) {
-  app.get("/api/oauth/google/login", (req: Request, res: Response) => {
+  // Local login — şifre gerekmez
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const authUrl = getGoogleAuthUrl(req);
-      res.redirect(authUrl);
-    } catch (error) {
-      console.error("[Google OAuth] Failed to generate auth URL", error);
-      res.status(500).json({ error: "Failed to initiate Google OAuth" });
-    }
-  });
-
-  app.get("/api/oauth/google/callback", async (req: Request, res: Response) => {
-    const { code, error: oauthError } = req.query;
-    if (oauthError) return res.redirect("/?error=oauth_denied");
-    if (!code || typeof code !== "string") return res.redirect("/?error=missing_code");
-    try {
-      const idToken = await exchangeCodeForToken(code, req);
-      const userInfo = await verifyGoogleToken(idToken);
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.platform,
-        lastSignedIn: new Date(),
-      });
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
+      const sessionToken = await sdk.createSessionToken(LOCAL_USER.openId, {
+        name: LOCAL_USER.name,
         expiresInMs: ONE_YEAR_MS,
       });
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      res.redirect("/dashboard");
+      res.json({ success: true, user: LOCAL_USER });
     } catch (error) {
-      console.error("[Google OAuth] Callback failed", error);
-      res.redirect("/?error=auth_failed");
-    }
-  });
-
-  app.post("/api/oauth/google", async (req: Request, res: Response) => {
-    const { token } = req.body;
-    if (!token) {
-      res.status(400).json({ error: "token is required" });
-      return;
-    }
-    try {
-      const userInfo = await verifyGoogleToken(token);
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.platform,
-        lastSignedIn: new Date(),
-      });
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      res.json({ success: true, user: { openId: userInfo.openId, name: userInfo.name, email: userInfo.email } });
-    } catch (error) {
-      console.error("[Google OAuth] Authentication failed", error);
-      res.status(500).json({ error: "Google OAuth authentication failed" });
+      res.status(500).json({ error: "Login failed" });
     }
   });
 
