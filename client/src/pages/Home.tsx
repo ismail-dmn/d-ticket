@@ -36,22 +36,22 @@ export default function Home() {
               className="w-full"
               disabled={isAuthenticating}
               onClick={async () => {
-                setIsAuthenticating(true);
-                try {
-                  const res = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                  });
-                  const data = await res.json();
-                  toast.success(`Hoş geldin, ${data.user.name}!`);
-                  await refresh();
-                } catch {
-                  toast.error("Giriş başarısız");
-                } finally {
-                  setIsAuthenticating(false);
-                }
-              }}
+  setIsAuthenticating(true);
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    const data = await res.json();
+    toast.success(`Hoş geldin, ${data.user.name}!`);
+    await refresh();  // Bu zaten sayfayı authenticated state'e geçirir
+  } catch {
+    toast.error("Giriş başarısız");
+  } finally {
+    setIsAuthenticating(false);
+  }
+}}
             >
               {isAuthenticating ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
