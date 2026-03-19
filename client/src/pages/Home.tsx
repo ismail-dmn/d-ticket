@@ -1,9 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Plus, FileText, Users, Ticket, TrendingDown } from "lucide-react";
-import { trpc } from "@/lib/trpc";
+import { Plus, FileText, Users, Ticket, TrendingDown } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -11,71 +10,6 @@ export default function Home() {
   const { user, loading, isAuthenticated, logout, refresh } = useAuth();
   const [, navigate] = useLocation();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  // Handle Google Sign-In response
-  const handleGoogleResponse = async (response: any) => {
-    if (!response.credential) {
-      toast.error("Google authentication failed");
-      return;
-    }
-
-    setIsAuthenticating(true);
-    try {
-      const res = await fetch("/api/oauth/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token: response.credential }),
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Authentication failed");
-      }
-
-      const data = await res.json();
-      toast.success(`Welcome, ${data.user.name}!`);
-
-      // Refresh auth state
-      await refresh();
-    } catch (error) {
-      console.error("Google authentication error:", error);
-      toast.error(error instanceof Error ? error.message : "Authentication failed");
-    } finally {
-      setIsAuthenticating(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAuthenticated && !loading) {
-      const initGoogle = () => {
-        // @ts-ignore
-        if (window.google) {
-          // @ts-ignore
-          window.google.accounts.id.initialize({
-            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            callback: handleGoogleResponse,
-            auto_select: false,
-          });
-
-          const btnDiv = document.getElementById("googleBtnDiv");
-          if (btnDiv) {
-            // @ts-ignore
-            window.google.accounts.id.renderButton(btnDiv, {
-              theme: "outline",
-              size: "large",
-              width: "350",
-            });
-          }
-        }
-      };
-
-      const timer = setTimeout(initGoogle, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, loading, refresh]);
 
   if (loading) {
     return (
@@ -95,30 +29,31 @@ export default function Home() {
           <CardHeader className="text-center">
             <div className="text-4xl font-bold text-primary mb-2">D Bilişim</div>
             <CardTitle>IT Operasyon Sistemi</CardTitle>
-            <CardDescription>Google hesabınızla güvenli giriş yapın</CardDescription>
+            <CardDescription>Giriş yapmak için tıklayın</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-6 pb-8">
-            {/* Google Sign-In Button */}
-            <div id="googleBtnDiv" className="min-h-[50px]"></div>
-
-            {isAuthenticating && (
-              <div className="text-center text-sm text-muted-foreground">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary inline-block mr-2"></div>
-                Authenticating...
-              </div>
-            )}
-
-            <div className="relative w-full text-center">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <span className="relative bg-card px-2 text-xs text-muted-foreground uppercase">
-                Alternatif
-              </span>
-            </div>
-
-            <Button variant="ghost" className="w-full text-xs opacity-50 cursor-not-allowed">
-              Kurumsal Kimlik (Devre Dışı)
+          <CardContent className="flex flex-col items-center pb-8">
+            <Button
+              className="w-full"
+              disabled={isAuthenticating}
+              onClick={async () => {
+                setIsAuthenticating(true);
+                try {
+                  const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                  });
+                  const data = await res.json();
+                  toast.success(`Hoş geldin, ${data.user.name}!`);
+                  await refresh();
+                } catch {
+                  toast.error("Giriş başarısız");
+                } finally {
+                  setIsAuthenticating(false);
+                }
+              }}
+            >
+              {isAuthenticating ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
           </CardContent>
         </Card>
@@ -126,7 +61,6 @@ export default function Home() {
     );
   }
 
-  // Authenticated Dashboard
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
