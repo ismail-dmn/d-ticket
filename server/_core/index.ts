@@ -6,14 +6,11 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 
 const app = express();
-
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// OAuth routes
 registerOAuthRoutes(app);
 
-// tRPC API
 app.use(
   "/api/trpc",
   createExpressMiddleware({
@@ -22,10 +19,13 @@ app.use(
   })
 );
 
-// Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Vercel serverless handler - default export zorunlu
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
 export default app;
