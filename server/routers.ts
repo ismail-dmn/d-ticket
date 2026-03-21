@@ -4,8 +4,10 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import * as vaultDb from "./vault-db";
 import * as whatsapp from "./whatsapp";
 import * as pdfService from "./pdf-service";
+import * as path from "path";
 
 export const appRouter = router({
   system: systemRouter,
@@ -114,6 +116,21 @@ export const appRouter = router({
       .mutation(({ input }) => db.createPayment(input as any)),
   }),
 
+  // Kasa yönetimi
+  vault: router({
+    getLicenses: protectedProcedure.input(z.number()).query(({ input }) => vaultDb.getLicensesByCustomer(input)),
+    getMailAccounts: protectedProcedure.input(z.number()).query(({ input }) => vaultDb.getMailAccountsByCustomer(input)),
+    getFirewallIPs: protectedProcedure.input(z.number()).query(({ input }) => vaultDb.getFirewallIPsByCustomer(input)),
+    getUserAccounts: protectedProcedure.input(z.number()).query(({ input }) => vaultDb.getUserAccountsByCustomer(input)),
+    getNotes: protectedProcedure.input(z.number()).query(({ input }) => vaultDb.getNotesByCustomer(input)),
+    
+    createLicense: protectedProcedure.input(z.any()).mutation(({ input }) => vaultDb.createLicense(input)),
+    createMailAccount: protectedProcedure.input(z.any()).mutation(({ input }) => vaultDb.createMailAccount(input)),
+    createFirewallIP: protectedProcedure.input(z.any()).mutation(({ input }) => vaultDb.createFirewallIP(input)),
+    createUserAccount: protectedProcedure.input(z.any()).mutation(({ input }) => vaultDb.createUserAccount(input)),
+    createNote: protectedProcedure.input(z.any()).mutation(({ input }) => vaultDb.createNote(input)),
+  }),
+
   // WhatsApp entegrasyonu
   whatsapp: router({
     sendPaymentReminder: protectedProcedure
@@ -153,9 +170,10 @@ export const appRouter = router({
         }
 
         try {
+          const storagePath = path.join(process.cwd(), "storage", "proposals");
           const pdfUrl = await pdfService.generateAndSaveProposalPDF(
             { proposal, customer },
-            "/tmp"
+            storagePath
           );
 
           await db.updateProposal(input.proposalId, { pdfUrl });
