@@ -70,7 +70,6 @@ function vitePluginManusDebugCollector(): Plugin {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true }));
         };
-
         let body = "";
         req.on("data", (chunk) => { body += chunk.toString(); });
         req.on("end", () => {
@@ -106,12 +105,18 @@ export default defineConfig({
   root: path.resolve(PROJECT_ROOT, "client"),
   publicDir: path.resolve(PROJECT_ROOT, "public"),
   build: {
-    outDir: path.resolve(PROJECT_ROOT, "dist"), 
+    outDir: path.resolve(PROJECT_ROOT, "dist"),
     emptyOutDir: true,
   },
   server: {
     host: true,
     allowedHosts: ["localhost", "127.0.0.1", ".manuscomputer.ai", ".manus.computer"],
     fs: { strict: true, deny: ["**/.*"] },
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
 });
