@@ -105,17 +105,15 @@ class SDKServer {
     }
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
-    // Google OAuth authentication flow
-    // Geliştirme aşaması için geçici bypass
-return { openId: "admin", name: "İsmail Duman", role: "admin" };
-    const cookies = this.parseCookies(req.headers.cookie);
-    const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
-
-    if (!session) {
-      throw ForbiddenError("Invalid session cookie");
-    }
+  async authenticateRequest(req: any) {
+  // Localhost'ta giriş ekranını atlamak için
+  return { 
+    openId: "local_admin", 
+    name: "İsmail Duman", 
+    role: "admin",
+    email: "dbilisim@gmail.com" 
+  };
+}
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
