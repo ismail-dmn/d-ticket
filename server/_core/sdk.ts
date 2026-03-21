@@ -105,8 +105,8 @@ class SDKServer {
     }
   }
 
-  async authenticateRequest(req: any) {
-  // Localhost'ta giriş ekranını atlamak için
+ async authenticateRequest(req: any) {
+  // Localhost testi için Google girişini atla
   return { 
     openId: "local_admin", 
     name: "İsmail Duman", 
